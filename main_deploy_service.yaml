@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: anomaly-detection
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: anomaly-detection
+  template:
+    metadata:
+      labels:
+        app: anomaly-detection
+    spec:
+      containers:
+      - name: anomaly-detection
+        image: muhammadhassaansolves/anomaly-detection
+        ports:
+        - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: anomaly-detection
+spec:
+  selector:
+    app: anomaly-detection
+  ports:
+    - port: 8000
+      targetPort: 8000
