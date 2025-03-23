@@ -1,0 +1,14 @@
+  # Point this to your Prometheus service inside the cluster, without the port
+  url: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local
+
+rules:
+  custom:
+    - seriesQuery: 'anomaly_count{namespace!="",pod!=""}'
+      resources:
+        overrides:
+          namespace: {resource: "namespace"}
+          pod: {resource: "pod"}
+      name:
+        matches: "^(.*)"
+        as: "anomaly_count"
+      metricsQuery: 'anomaly_count{<<.LabelMatchers>>}'
