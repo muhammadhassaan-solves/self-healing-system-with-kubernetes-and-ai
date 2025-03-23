@@ -1,20 +1,25 @@
-import json
-import numpy as np
-import pandas as pd
-import joblib
-from prometheus_client import Gauge, start_http_server
 import time
+import json
+import joblib
+import pandas as pd
+from prometheus_client import Gauge, start_http_server
 
-# Load the pre-trained anomaly detection model
-MODEL_PATH = "anomaly_model.pkl"
-model = joblib.load(MODEL_PATH)
+# The Pod name/namespace from the environment:
+POD_NAME = os.environ.get("POD_NAME", "unknown-pod")
+POD_NAMESPACE = os.environ.get("POD_NAMESPACE", "default")
 
-# Define Prometheus metric
-anomaly_gauge = Gauge("anomaly_count", "Number of anomalies detected")
+# Create a gauge with labels
+anomaly_gauge = Gauge(
+    "anomaly_count",
+    "Number of anomalies detected",
+    ["pod", "namespace"]
+)
 
-# Function to detect anomalies
+# Load model
+model = joblib.load("anomaly_model.pkl")
+
 def detect_anomalies():
-    # Load data from the static JSON file
+    # Load data from metrics.json
     with open("metrics.json") as f:
         data = json.load(f)
 
@@ -24,22 +29,3 @@ def detect_anomalies():
 
     # Normalize data
     df["value"] = (df["value"] - df["value"].mean()) / df["value"].std()
-
-    # Make predictions
-    df["anomaly"] = model.predict(df[["value"]])
-
-    # Count anomalies
-    anomaly_count = (df["anomaly"] == -1).sum()
-    anomaly_gauge.set(anomaly_count)  # Update Prometheus metric
-
-    # Print results
-    print(f"Anomalies detected: {anomaly_count}")
-    print(df[df["anomaly"] == -1])
-
-if __name__ == "__main__":
-    # Start Prometheus metrics server on port 8000
-    start_http_server(8000, addr="0.0.0.0")
-
-    while True:
-        detect_anomalies()
-        time.sleep(30)  # Run detection every 30 seconds
